@@ -6,6 +6,4 @@ The shells will be made with 3d printed parts and I will use a Raspberry Pi Pico
 The discs are held in "sleeves" that safely hold the them wthout damaging them.
 Once a game is slected in the future app, the "hand" will move along rails controled by motors to reach the disc, move up, pull it out, go down, and line it up, so that the PS5 can do the rest.
 
-So far:
-  I got the pico to blink using micropython
-  I designed the sleaves and the modular tower peices.
+So far I got the pico to blink using micropython, and I designed the sleaves and the modular tower peices.
