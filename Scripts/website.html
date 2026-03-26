@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>PS5 Disc Loader</title>
+  <style>
+    body {
+      font-family: Arial, Helvetica, sans-serif;
+      background-color: #111;
+      color: #eee;
+      text-align: center;
+      margin: 0;
+      padding: 20px;
+    }
+    h1 {
+      color: #ffcc00;
+      margin-bottom: 10px;
+    }
+    .container {
+      max-width: 700px;
+      margin: 0 auto;
+    }
+    .status-box {
+      background: #222;
+      padding: 15px;
+      border-radius: 10px;
+      margin: 20px 0;
+      font-size: 1.1em;
+    }
+    #carousel {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      margin: 30px 0;
+    }
+    .preview {
+      width: 120px;
+      height: 120px;
+      object-fit: cover;
+      border-radius: 8px;
+      margin: 0 15px;
+      opacity: 0.6;
+      border: 2px solid #444;
+      transition: all 0.3s;
+    }
+    .preview:hover {
+      opacity: 0.9;
+      transform: scale(1.05);
+    }
+    .central {
+      width: 320px;
+      height: 320px;
+      object-fit: cover;
+      border-radius: 12px;
+      border: 4px solid #ffcc00;
+      box-shadow: 0 0 20px rgba(255, 204, 0, 0.4);
+    }
+    button {
+      background: #0066cc;
+      color: white;
+      border: none;
+      padding: 14px 28px;
+      margin: 10px;
+      font-size: 1.1em;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.3s;
+    }
+    button:hover {
+      background: #0088ff;
+    }
+    button.load {
+      background: #00aa44;
+    }
+    button.load:hover {
+      background: #00cc55;
+    }
+    button.unload {
+      background: #cc3300;
+    }
+    button.unload:hover {
+      background: #ff5500;
+    }
+    .small {
+      font-size: 0.9em;
+      color: #aaa;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h1>PS5 Disc Loader</h1>
+
+    <div class="status-box">
+      <p>Current level: <strong id="current-level">{level}</strong></p>
+      <p>Disc loaded: <strong id="loaded-status">{loaded}</strong></p>
+      <p>Status: <span id="status">{status}</span></p>
+    </div>
+
+    <h2>Select Game</h2>
+
+    <div id="carousel">
+      <img id="prev-img" class="preview" src="" alt="Previous">
+      <img id="central-img" class="central" src="" alt="Selected Game">
+      <img id="next-img" class="preview" src="" alt="Next">
+    </div>
+
+    <div>
+      <button onclick="prevGame()">◀ Prev</button>
+      <button onclick="nextGame()">Next ▶</button>
+    </div>
+
+    <div>
+      <button class="load" onclick="loadDisc()">LOAD DISC</button>
+      <button class="unload" onclick="unloadDisc()">UNLOAD DISC</button>
+    </div>
+
+    <p class="small">After big changes, wait 2–3 seconds for the status to update.<br>
+    Make sure your Pico is connected to Wi-Fi.</p>
+  </div>
+
+  <script>
+    // === Your games list ===
+    // Change titles and image URLs to your real games
+    // You can use free image hosts like imgur.com, postimg.cc, etc.
+    const games = [
+      { level: 1, title: "Astro's Playroom",     img: "https://i.imgur.com/example1.jpg" },
+      { level: 2, title: "Spider-Man 2",         img: "https://i.imgur.com/example2.jpg" },
+      { level: 3, title: "God of War Ragnarök",  img: "https://i.imgur.com/example3.jpg" },
+      { level: 4, title: "Elden Ring",           img: "https://i.imgur.com/example4.jpg" },
+      { level: 5, title: "Final Fantasy XVI",    img: "https://i.imgur.com/example5.jpg" }
+    ];
+
+    let currentIndex = 0;
+
+    // Update the three images
+    function updateCarousel() {
+      const prev = (currentIndex - 1 + games.length) % games.length;
+      const next = (currentIndex + 1) % games.length;
+
+      document.getElementById("prev-img").src = games[prev].img;
+      document.getElementById("central-img").src = games[currentIndex].img;
+      document.getElementById("next-img").src = games[next].img;
+
+      // Optional: show title under central image
+      // document.getElementById("central-title").textContent = games[currentIndex].title;
+    }
+
+    function prevGame() {
+      currentIndex = (currentIndex - 1 + games.length) % games.length;
+      updateCarousel();
+    }
+
+    function nextGame() {
+      currentIndex = (currentIndex + 1) % games.length;
+      updateCarousel();
+    }
+
+    // Load the selected disc
+    async function loadDisc() {
+      const level = games[currentIndex].level;
+      const statusEl = document.getElementById("status");
+
+      statusEl.textContent = "Working...";
+
+      try {
+        // First tell Pico which level we want
+        await fetch(`/select?level=${level}`);
+        // Then actually load
+        const response = await fetch("/load");
+        const text = await response.text();
+
+        statusEl.textContent = text;
+        document.getElementById("loaded-status").textContent = "Yes";
+        document.getElementById("current-level").textContent = level;
+      } catch (err) {
+        statusEl.textContent = "Error – check connection";
+        console.error(err);
+      }
+    }
+
+    // Unload the disc
+    async function unloadDisc() {
+      const statusEl = document.getElementById("status");
+
+      statusEl.textContent = "Unloading...";
+
+      try {
+        const response = await fetch("/unload");
+        const text = await response.text();
+
+        statusEl.textContent = text;
+        document.getElementById("loaded-status").textContent = "No";
+        document.getElementById("current-level").textContent = "1";
+      } catch (err) {
+        statusEl.textContent = "Error – check connection";
+        console.error(err);
+      }
+    }
+
+    // Start with first game shown
+    updateCarousel();
+  </script>
+
+</body>
+</html>
